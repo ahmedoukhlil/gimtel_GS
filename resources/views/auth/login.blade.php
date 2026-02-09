@@ -1,22 +1,12 @@
 <x-guest-layout>
     <x-slot name="logo">
         <div class="flex flex-col items-center mb-8 animate-fade-in">
-            <div class="w-20 h-20 mb-4 transform hover:scale-105 transition-transform">
+            <div class="transform hover:scale-105 transition-transform">
                 <img 
-                    src="{{ asset('images/icons/icon-192x192.png') }}" 
-                    alt="{{ config('app.name', 'Inventaire Pro') }}"
-                    class="w-full h-full object-contain drop-shadow-lg"
-                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg hidden">
-                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                </div>
+                    src="{{ asset('GIMTEL_LOGO.png') }}" 
+                    alt="{{ config('app.name', 'GIMTEL') }}"
+                    class="h-20 w-auto max-w-full object-contain drop-shadow-lg">
             </div>
-            <h1 class="text-3xl font-bold text-indigo-700">
-                {{ config('app.name', 'Inventaire Pro') }}
-            </h1>
-            <p class="text-sm text-gray-700 font-medium mt-2">Gestion d'inventaire professionnelle</p>
         </div>
     </x-slot>
 
