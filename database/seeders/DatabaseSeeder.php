@@ -11,8 +11,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Appel des seeders dans l'ordre des dépendances
+        // Rôles et permissions avant les utilisateurs
         $this->call([
+            RoleSeeder::class,
             UserSeeder::class,
             LocalisationSeeder::class,
             BienSeeder::class,

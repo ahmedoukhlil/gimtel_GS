@@ -6,9 +6,6 @@ use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use App\Models\User;
-use App\Models\StockProduit;
-use App\Models\StockReservation;
-use Illuminate\Support\Facades\Hash;
 
 class RoleSeeder extends Seeder
 {
@@ -16,13 +13,13 @@ class RoleSeeder extends Seeder
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Créer les permissions
+        // Permissions
         Permission::firstOrCreate(['name' => 'passer_commande']);
         Permission::firstOrCreate(['name' => 'valider_commande']);
         Permission::firstOrCreate(['name' => 'gerer_stock_total']);
         Permission::firstOrCreate(['name' => 'voir_mon_stock']);
 
-        // Créer tous les rôles (Spatie)
+        // Rôles actuels (alignés sur User::VALID_ROLES)
         $roleAdmin = Role::firstOrCreate(['name' => 'admin']);
 
         $roleClient = Role::firstOrCreate(['name' => 'client']);
@@ -41,13 +38,11 @@ class RoleSeeder extends Seeder
         }
 
         Role::firstOrCreate(['name' => 'agent']);
-
         Role::firstOrCreate(['name' => 'demandeur_interne']);
         Role::firstOrCreate(['name' => 'direction_moyens_generaux']);
 
+        // Synchroniser les utilisateurs existants (colonne role <-> Spatie)
         $validRoles = User::getValidRoles();
-
-        // Corriger et synchroniser tous les utilisateurs (colonne role <-> Spatie)
         User::all()->each(function (User $user) use ($validRoles) {
             $roleName = $user->getRawOriginal('role') ?? $user->getAttribute('role');
             $roleName = is_string($roleName) ? trim($roleName) : '';
@@ -62,40 +57,6 @@ class RoleSeeder extends Seeder
             }
         });
 
-        // Créer des utilisateurs de test uniquement s'ils n'existent pas
-        if (!User::where('users', 'admin')->exists()) {
-            $admin = User::create([
-                'users' => 'admin',
-                'mdp' => Hash::make('password'),
-                'role' => 'admin',
-            ]);
-            $admin->syncRoles(['admin']);
-        }
-
-        if (!User::where('users', 'client1')->exists()) {
-            $client = User::create([
-                'users' => 'client1',
-                'mdp' => Hash::make('password'),
-                'role' => 'client',
-            ]);
-            $client->syncRoles(['client']);
-            $produit = StockProduit::first();
-            if ($produit) {
-                StockReservation::create([
-                    'client_id' => $client->idUser,
-                    'produit_id' => $produit->id,
-                    'quantite_reservee' => 50,
-                ]);
-            }
-        }
-
-        if (!User::where('users', 'production')->exists()) {
-            $production = User::create([
-                'users' => 'production',
-                'mdp' => Hash::make('password'),
-                'role' => 'direction_production',
-            ]);
-            $production->syncRoles(['direction_production']);
-        }
+        $this->command->info('Rôles et permissions créés / synchronisés.');
     }
 }
