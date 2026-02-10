@@ -71,305 +71,416 @@
             </div>
 
             <!-- Navigation -->
-            <nav class="flex-1 overflow-y-auto py-4 px-3" x-data="{ openMenu: '{{ request()->routeIs('stock.produits.*') || request()->routeIs('stock.sorties.*') || request()->routeIs('dashboard') ? 'stock' : (request()->routeIs('stock.magasins.*') || request()->routeIs('stock.categories.*') || request()->routeIs('stock.fournisseurs.*') || request()->routeIs('stock.demandeurs.*') || request()->routeIs('stock.produits-appro.*') || request()->routeIs('stock.magasins-appro.*') || request()->routeIs('stock.categories-appro.*') || request()->routeIs('stock.fournisseurs-appro.*') || request()->routeIs('stock.dashboard-appro') || request()->routeIs('stock.entrees.*') ? 'appro' : (request()->routeIs('stock.*') ? 'stock' : '')) }}' }">
+            <nav class="flex-1 overflow-y-auto py-4 px-3"
+                 x-data="{
+                    openMenu: '',
+                    init() {
+                        {{-- Auto-ouvrir le sous-menu pertinent --}}
+                        @hasanyrole('admin|admin_stock')
+                            @if(request()->routeIs('stock.produits.*') || request()->routeIs('stock.sorties.*') || request()->routeIs('stock.magasins.*') || request()->routeIs('stock.categories.*') || request()->routeIs('stock.fournisseurs.*') || request()->routeIs('stock.clients.*') || (request()->routeIs('stock.entrees.*') && request('usage') === 'commande_carte'))
+                                this.openMenu = 'stock';
+                            @elseif(request()->routeIs('stock.produits-appro.*') || request()->routeIs('stock.magasins-appro.*') || request()->routeIs('stock.categories-appro.*') || request()->routeIs('stock.fournisseurs-appro.*') || request()->routeIs('stock.demandeurs.*') || request()->routeIs('stock.dashboard-appro') || (request()->routeIs('stock.entrees.*') && request('usage') === 'appro'))
+                                this.openMenu = 'appro';
+                            @endif
+                        @endhasanyrole
+                    }
+                 }">
                 <ul class="space-y-1">
-                    <!-- 1. Accueil -->
+
+                    {{-- ============================================================
+                         DASHBOARD
+                    ============================================================ --}}
                     <li>
-                        <a href="{{ route('dashboard') }}" 
-                           class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('dashboard') ? 'bg-gray-700 text-white' : '' }}">
+                        <a href="{{ route('dashboard') }}"
+                           class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                  {{ request()->routeIs('dashboard') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
                             <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                             </svg>
-                            <span>Dashboard</span>
+                            Dashboard
                         </a>
                     </li>
 
                     @auth
-                        <!-- 2. Espace client -->
-                        @if(auth()->user()->isClient())
-                            <li class="pt-2 mt-2 border-t border-gray-700">
-                                <p class="px-4 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Espace client</p>
-                            </li>
-                            <li>
-                                <a href="{{ route('client.dashboard') }}" 
-                                   class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('client.dashboard') ? 'bg-gray-700 text-white' : '' }}">
-                                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                                    </svg>
-                                    <span>Passer une commande</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('client.commande') }}" 
-                                   class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('client.commande*') ? 'bg-gray-700 text-white' : '' }}">
-                                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                                    </svg>
-                                    <span>Mes commandes</span>
-                                </a>
-                            </li>
-                        @endif
+                    {{-- ============================================================
+                         CLIENT
+                    ============================================================ --}}
+                    @if(auth()->user()->isClient())
+                        <li class="pt-4 mt-3">
+                            <p class="px-3 mb-2 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Espace client</p>
+                        </li>
+                        <li>
+                            <a href="{{ route('client.dashboard') }}"
+                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                      {{ request()->routeIs('client.dashboard') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Passer une commande
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('client.commande') }}"
+                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                      {{ request()->routeIs('client.commande*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                                </svg>
+                                Mes commandes
+                            </a>
+                        </li>
+                    @endif
 
-                        <!-- 3. Espace demandeur (Demandes d'approvisionnement) -->
-                        @if(auth()->user()->isDemandeurInterne())
-                            <li class="pt-2 mt-2 border-t border-gray-700">
-                                <p class="px-4 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Demandes d'approvisionnement</p>
-                            </li>
-                            <li>
-                                <a href="{{ route('demandes-appro.create') }}"
-                                   class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('demandes-appro.create') ? 'bg-gray-700 text-white' : '' }}">
-                                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                    </svg>
-                                    <span>Créer une demande</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('demandes-appro.index') }}"
-                                   class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('demandes-appro.index') || request()->routeIs('demandes-appro.show') ? 'bg-gray-700 text-white' : '' }}">
-                                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                                    </svg>
-                                    <span>Mes demandes</span>
-                                </a>
-                            </li>
-                        @endif
-                        <!-- Direction Moyens Généraux (Approvisionnement) -->
-                        @if(auth()->user()->isDirectionMoyensGeneraux())
-                            <li class="pt-2 mt-2 border-t border-gray-700">
-                                <p class="px-4 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Direction Moyens Généraux</p>
-                            </li>
-                            <li>
-                                <a href="{{ route('dmg.demandes.index') }}"
-                                   class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('dmg.demandes.index') || request()->routeIs('dmg.demandes.show') ? 'bg-gray-700 text-white' : '' }}">
-                                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                                    </svg>
-                                    <span>Demandes d'approvisionnement</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('dmg.demandes.create') }}"
-                                   class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('dmg.demandes.create') ? 'bg-gray-700 text-white' : '' }}">
-                                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                    </svg>
-                                    <span>Créer une demande</span>
-                                </a>
-                            </li>
-                        @endif
+                    {{-- ============================================================
+                         DEMANDEUR INTERNE
+                    ============================================================ --}}
+                    @if(auth()->user()->isDemandeurInterne())
+                        <li class="pt-4 mt-3">
+                            <p class="px-3 mb-2 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Approvisionnement</p>
+                        </li>
+                        <li>
+                            <a href="{{ route('demandes-appro.create') }}"
+                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                      {{ request()->routeIs('demandes-appro.create') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Nouvelle demande
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('demandes-appro.index') }}"
+                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                      {{ request()->routeIs('demandes-appro.index') || request()->routeIs('demandes-appro.show') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                </svg>
+                                Mes demandes
+                            </a>
+                        </li>
+                    @endif
 
-                        <!-- 4. Production & Commandes (Direction Production) -->
-                        @if(auth()->user()->isDirectionProduction())
-                            <li class="pt-2 mt-2 border-t border-gray-700">
-                                <p class="px-4 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Production & commandes</p>
-                            </li>
-                            <li>
-                                <a href="{{ route('production.orders') }}" 
-                                   class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('production.orders') ? 'bg-gray-700 text-white' : '' }}">
-                                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                                    </svg>
-                                    <span>Gestion commandes</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('production.commander-pour-client') }}" 
-                                   class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('production.commander-pour-client') ? 'bg-gray-700 text-white' : '' }}">
-                                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                                    </svg>
-                                    <span>Commander pour un client</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('production.reservations') }}" 
-                                   class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('production.reservations') ? 'bg-gray-700 text-white' : '' }}">
-                                    <span class="mr-3">📋</span>
-                                    <span>Réservations clients</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('stock.produits.index') }}" 
-                                   class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.produits.*') ? 'bg-gray-700 text-white' : '' }}">
-                                    <span class="mr-3">📦</span>
-                                    <span>Produits (commandes/cartes)</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('stock.entrees.index') }}" 
-                                   class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.entrees.*') ? 'bg-gray-700 text-white' : '' }}">
-                                    <span class="mr-3">📥</span>
-                                    <span>Entrées stock</span>
-                                </a>
-                            </li>
-                        @endif
+                    {{-- ============================================================
+                         DIRECTION MOYENS GENERAUX
+                    ============================================================ --}}
+                    @if(auth()->user()->isDirectionMoyensGeneraux())
+                        <li class="pt-4 mt-3">
+                            <p class="px-3 mb-2 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Moyens Generaux</p>
+                        </li>
+                        <li>
+                            <a href="{{ route('dmg.demandes.index') }}"
+                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                      {{ request()->routeIs('dmg.demandes.index') || request()->routeIs('dmg.demandes.show') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                </svg>
+                                Demandes d'appro
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('dmg.demandes.create') }}"
+                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                      {{ request()->routeIs('dmg.demandes.create') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Nouvelle demande
+                            </a>
+                        </li>
+                    @endif
 
-                        <!-- 5. Stock – Commandes / Cartes (Admin & Admin Stock) -->
-                        @hasanyrole('admin|admin_stock')
-                            <li class="pt-2 mt-2 border-t border-gray-700">
-                                <p class="px-4 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</p>
-                            </li>
-                            <li>
-                                <button @click="openMenu = (openMenu === 'stock') ? '' : 'stock'" 
-                                        class="w-full flex items-center justify-between px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
-                                        :class="{ 'bg-gray-700 text-white': openMenu === 'stock' }">
-                                    <div class="flex items-center">
-                                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- ============================================================
+                         DIRECTION PRODUCTION
+                    ============================================================ --}}
+                    @if(auth()->user()->isDirectionProduction())
+                        <li class="pt-4 mt-3">
+                            <p class="px-3 mb-2 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Production</p>
+                        </li>
+                        <li>
+                            <a href="{{ route('production.orders') }}"
+                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                      {{ request()->routeIs('production.orders') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                                Gestion commandes
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('production.commander-pour-client') }}"
+                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                      {{ request()->routeIs('production.commander-pour-client') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                </svg>
+                                Commander pour client
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('production.reservations') }}"
+                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                      {{ request()->routeIs('production.reservations') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                Reservations clients
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('stock.produits.index') }}"
+                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                      {{ request()->routeIs('stock.produits.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                </svg>
+                                Produits
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('stock.entrees.index', ['usage' => 'commande_carte']) }}"
+                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                      {{ request()->routeIs('stock.entrees.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                                Entrees stock
+                            </a>
+                        </li>
+                    @endif
+
+                    {{-- ============================================================
+                         STOCK - COMMANDES / CARTES  (Admin & Admin Stock)
+                    ============================================================ --}}
+                    @hasanyrole('admin|admin_stock')
+                        <li class="pt-4 mt-3">
+                            <p class="px-3 mb-2 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Stock</p>
+                        </li>
+
+                        {{-- -- Commandes / Cartes (accordeon) -- --}}
+                        <li>
+                            <button @click="openMenu = (openMenu === 'stock') ? '' : 'stock'"
+                                    class="w-full group flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150"
+                                    :class="openMenu === 'stock' ? 'bg-gray-700/80 text-white' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white'">
+                                <span class="flex items-center">
+                                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    </svg>
+                                    Commandes / Cartes
+                                </span>
+                                <svg class="w-4 h-4 transition-transform duration-200 flex-shrink-0" :class="openMenu === 'stock' && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <ul x-show="openMenu === 'stock'"
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0 -translate-y-1"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 -translate-y-1"
+                                class="mt-1 ml-3 space-y-0.5 border-l-2 border-gray-700 pl-3">
+                                <li>
+                                    <a href="{{ route('stock.produits.index') }}"
+                                       class="flex items-center px-3 py-2 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.produits.*') ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        <svg class="w-4 h-4 mr-2.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                         </svg>
-                                        <span>Commandes / Cartes</span>
-                                    </div>
-                                    <svg class="w-4 h-4 transition-transform flex-shrink-0" :class="{ 'rotate-180': openMenu === 'stock' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </button>
-                                <ul x-show="openMenu === 'stock'" x-transition class="mt-2 space-y-1 pl-4">
-                                    <li>
-                                        <a href="{{ route('dashboard') }}" 
-                                           class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('dashboard') ? 'bg-gray-700 text-white' : '' }}">
-                                            <span class="mr-2">📊</span>
-                                            <span>Dashboard</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="{{ route('stock.produits.index') }}" 
-                                           class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.produits.*') ? 'bg-gray-700 text-white' : '' }}">
-                                            <span class="mr-2">📦</span>
-                                            <span>Produits</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="{{ route('stock.entrees.index') }}" 
-                                           class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.entrees.*') ? 'bg-gray-700 text-white' : '' }}">
-                                            <span class="mr-2">📥</span>
-                                            <span>Entrées</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="{{ route('stock.sorties.index') }}" 
-                                           class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.sorties.*') ? 'bg-gray-700 text-white' : '' }}">
-                                            <span class="mr-2">📤</span>
-                                            <span>Sorties</span>
-                                        </a>
-                                    </li>
-                                    @role('admin')
-                                    <li class="pt-2 mt-2 border-t border-gray-700" x-data="{ open: false }">
-                                        <button @click="open = !open" 
-                                                class="w-full flex items-center justify-between px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors">
-                                            <div class="flex items-center">
-                                                <span class="mr-2">⚙️</span>
-                                                <span class="text-xs font-semibold uppercase">Paramètres</span>
-                                            </div>
-                                            <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </button>
-                                        <ul x-show="open" x-transition class="mt-1 space-y-1 pl-4">
-                                            <li><a href="{{ route('stock.magasins.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.magasins.*') ? 'bg-gray-700 text-white' : '' }}">Magasins</a></li>
-                                            <li><a href="{{ route('stock.categories.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.categories.*') ? 'bg-gray-700 text-white' : '' }}">Catégories</a></li>
-                                            <li><a href="{{ route('stock.fournisseurs.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.fournisseurs.*') ? 'bg-gray-700 text-white' : '' }}">Fournisseurs</a></li>
-                                            <li><a href="{{ route('stock.clients.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.clients.*') ? 'bg-gray-700 text-white' : '' }}">Clients</a></li>
-                                        </ul>
-                                    </li>
-                                    @endrole
-                                </ul>
-                            </li>
-
-                            <!-- 6. Stock – Approvisionnement -->
-                            <li>
-                                <button @click="openMenu = (openMenu === 'appro') ? '' : 'appro'" 
-                                        class="w-full flex items-center justify-between px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
-                                        :class="{ 'bg-gray-700 text-white': openMenu === 'appro' }">
-                                    <div class="flex items-center">
-                                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                        Produits
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('stock.entrees.index', ['usage' => 'commande_carte']) }}"
+                                       class="flex items-center px-3 py-2 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.entrees.*') && request('usage') === 'commande_carte' ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        <svg class="w-4 h-4 mr-2.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                                         </svg>
-                                        <span>Approvisionnement</span>
-                                    </div>
-                                    <svg class="w-4 h-4 transition-transform flex-shrink-0" :class="{ 'rotate-180': openMenu === 'appro' }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </button>
-                                <ul x-show="openMenu === 'appro'" x-transition class="mt-2 space-y-1 pl-4">
-                                    <li>
-                                        <a href="{{ route('stock.dashboard-appro') }}" 
-                                           class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.dashboard-appro') ? 'bg-gray-700 text-white' : '' }}">
-                                            <span class="mr-2">📊</span>
-                                            <span>Dashboard</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="{{ route('stock.produits-appro.index') }}" 
-                                           class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.produits-appro.*') ? 'bg-gray-700 text-white' : '' }}">
-                                            <span class="mr-2">📦</span>
-                                            <span>Produits Appro</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="{{ route('stock.entrees.index') }}" 
-                                           class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.entrees.*') ? 'bg-gray-700 text-white' : '' }}">
-                                            <span class="mr-2">📥</span>
-                                            <span>Entrées</span>
-                                        </a>
-                                    </li>
-                                    @role('admin')
-                                    <li class="pt-2 mt-2 border-t border-gray-700" x-data="{ openAppro: {{ json_encode(request()->routeIs('stock.magasins-appro.*') || request()->routeIs('stock.categories-appro.*') || request()->routeIs('stock.fournisseurs-appro.*') || request()->routeIs('stock.demandeurs.*') || request()->routeIs('stock.produits-appro.*') || request()->routeIs('stock.dashboard-appro') || request()->routeIs('stock.entrees.*')) }} }">
-                                        <button @click="openAppro = !openAppro" 
-                                                class="w-full flex items-center justify-between px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors">
-                                            <div class="flex items-center">
-                                                <span class="mr-2">⚙️</span>
-                                                <span class="text-xs font-semibold uppercase">Paramètres</span>
-                                            </div>
-                                            <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': openAppro }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </button>
-                                        <ul x-show="openAppro" x-transition class="mt-1 space-y-1 pl-4">
-                                            <li><a href="{{ route('stock.magasins-appro.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.magasins-appro.*') ? 'bg-gray-700 text-white' : '' }}">Magasins</a></li>
-                                            <li><a href="{{ route('stock.categories-appro.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.categories-appro.*') ? 'bg-gray-700 text-white' : '' }}">Catégories</a></li>
-                                            <li><a href="{{ route('stock.fournisseurs-appro.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.fournisseurs-appro.*') ? 'bg-gray-700 text-white' : '' }}">Fournisseurs</a></li>
-                                            <li><a href="{{ route('stock.demandeurs.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('stock.demandeurs.*') ? 'bg-gray-700 text-white' : '' }}">Demandeurs</a></li>
-                                        </ul>
-                                    </li>
-                                    @endrole
-                                </ul>
-                            </li>
-                        @endhasanyrole
+                                        Entrees
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('stock.sorties.index') }}"
+                                       class="flex items-center px-3 py-2 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.sorties.*') ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        <svg class="w-4 h-4 mr-2.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m4-8l-4-4m0 0L16 8m4-4v12"></path>
+                                        </svg>
+                                        Sorties
+                                    </a>
+                                </li>
+                                @role('admin')
+                                <li class="pt-1.5 mt-1.5 border-t border-gray-700/50">
+                                    <span class="flex items-center px-3 py-1.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Parametres</span>
+                                </li>
+                                <li>
+                                    <a href="{{ route('stock.magasins.index') }}"
+                                       class="flex items-center px-3 py-1.5 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.magasins.*') ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        Magasins
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('stock.categories.index') }}"
+                                       class="flex items-center px-3 py-1.5 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.categories.*') ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        Categories
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('stock.fournisseurs.index') }}"
+                                       class="flex items-center px-3 py-1.5 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.fournisseurs.*') ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        Fournisseurs
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('stock.clients.index') }}"
+                                       class="flex items-center px-3 py-1.5 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.clients.*') ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        Clients
+                                    </a>
+                                </li>
+                                @endrole
+                            </ul>
+                        </li>
 
-                        <!-- 7. Administration (Admin) -->
-                        @role('admin')
-                            <li class="pt-2 mt-2 border-t border-gray-700">
-                                <p class="px-4 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Administration</p>
-                            </li>
-                            <li>
-                                <a href="{{ route('users.index') }}" 
-                                   class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('users.*') ? 'bg-gray-700 text-white' : '' }}">
+                        {{-- -- Approvisionnement (accordeon) -- --}}
+                        <li>
+                            <button @click="openMenu = (openMenu === 'appro') ? '' : 'appro'"
+                                    class="w-full group flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150"
+                                    :class="openMenu === 'appro' ? 'bg-gray-700/80 text-white' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white'">
+                                <span class="flex items-center">
                                     <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                                     </svg>
-                                    <span>Utilisateurs</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('settings.mail') }}" 
-                                   class="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors {{ request()->routeIs('settings.mail') ? 'bg-gray-700 text-white' : '' }}">
-                                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                    </svg>
-                                    <span>Configuration e-mail</span>
-                                </a>
-                            </li>
-                        @endrole
+                                    Approvisionnement
+                                </span>
+                                <svg class="w-4 h-4 transition-transform duration-200 flex-shrink-0" :class="openMenu === 'appro' && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <ul x-show="openMenu === 'appro'"
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0 -translate-y-1"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 -translate-y-1"
+                                class="mt-1 ml-3 space-y-0.5 border-l-2 border-gray-700 pl-3">
+                                <li>
+                                    <a href="{{ route('stock.dashboard-appro') }}"
+                                       class="flex items-center px-3 py-2 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.dashboard-appro') ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        <svg class="w-4 h-4 mr-2.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                        </svg>
+                                        Dashboard
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('stock.produits-appro.index') }}"
+                                       class="flex items-center px-3 py-2 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.produits-appro.*') ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        <svg class="w-4 h-4 mr-2.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                        </svg>
+                                        Produits
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('stock.entrees.index', ['usage' => 'appro']) }}"
+                                       class="flex items-center px-3 py-2 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.entrees.*') && request('usage') === 'appro' ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        <svg class="w-4 h-4 mr-2.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                        </svg>
+                                        Entrees
+                                    </a>
+                                </li>
+                                @role('admin')
+                                <li class="pt-1.5 mt-1.5 border-t border-gray-700/50">
+                                    <span class="flex items-center px-3 py-1.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Parametres</span>
+                                </li>
+                                <li>
+                                    <a href="{{ route('stock.magasins-appro.index') }}"
+                                       class="flex items-center px-3 py-1.5 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.magasins-appro.*') ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        Magasins
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('stock.categories-appro.index') }}"
+                                       class="flex items-center px-3 py-1.5 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.categories-appro.*') ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        Categories
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('stock.fournisseurs-appro.index') }}"
+                                       class="flex items-center px-3 py-1.5 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.fournisseurs-appro.*') ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        Fournisseurs
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('stock.demandeurs.index') }}"
+                                       class="flex items-center px-3 py-1.5 text-sm rounded-lg transition-colors duration-150
+                                              {{ request()->routeIs('stock.demandeurs.*') ? 'text-indigo-400 bg-indigo-500/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                                        Demandeurs
+                                    </a>
+                                </li>
+                                @endrole
+                            </ul>
+                        </li>
+                    @endhasanyrole
+
+                    {{-- ============================================================
+                         ADMINISTRATION (Admin uniquement)
+                    ============================================================ --}}
+                    @role('admin')
+                        <li class="pt-4 mt-3">
+                            <p class="px-3 mb-2 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">Administration</p>
+                        </li>
+                        <li>
+                            <a href="{{ route('users.index') }}"
+                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                      {{ request()->routeIs('users.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                </svg>
+                                Utilisateurs
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('settings.mail') }}"
+                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150
+                                      {{ request()->routeIs('settings.mail') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white' }}">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                                Configuration e-mail
+                            </a>
+                        </li>
+                    @endrole
                     @endauth
                 </ul>
             </nav>
 
             <!-- Footer Sidebar -->
-            <div class="px-4 py-4 border-t border-gray-700">
-                <div class="text-xs text-gray-400 mb-2">
-                    Version 1.0.0
+            <div class="px-4 py-3 border-t border-gray-700/50">
+                @auth
+                <div class="flex items-center space-x-3 mb-2">
+                    <div class="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                        {{ strtoupper(substr(auth()->user()->users ?? 'U', 0, 1)) }}
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-gray-200 truncate">{{ auth()->user()->users ?? 'Utilisateur' }}</p>
+                        <p class="text-[11px] text-gray-500 truncate">{{ auth()->user()->role_name }}</p>
+                    </div>
                 </div>
+                @endauth
+                <p class="text-[10px] text-gray-600">GIMTEL v1.0</p>
             </div>
         </aside>
 

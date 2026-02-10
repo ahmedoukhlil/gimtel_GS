@@ -22,6 +22,8 @@ class FormEntree extends Component
     public $fournisseur_id = '';
     public $quantite = 1;
     public $observations = '';
+    /** Type d'entrées : 'commande_carte' ou 'appro' */
+    public string $usage = '';
 
     public function mount()
     {
@@ -30,16 +32,21 @@ class FormEntree extends Component
             abort(403, 'Accès non autorisé. Seuls les administrateurs peuvent créer des entrées.');
         }
 
+        // Si le paramètre usage est passé en query string, on l'utilise ;
+        // sinon, on détermine en fonction du rôle.
+        if (empty($this->usage) || !in_array($this->usage, [StockProduit::USAGE_COMMANDE_CARTE, StockProduit::USAGE_APPRO], true)) {
+            $this->usage = $user->isDirectionProduction()
+                ? StockProduit::USAGE_COMMANDE_CARTE
+                : StockProduit::USAGE_APPRO;
+        }
+
         // Date du jour par défaut
         $this->date_entree = now()->format('Y-m-d');
     }
 
     protected function usageEntrees(): string
     {
-        $user = auth()->user();
-        return $user->isDirectionProduction()
-            ? StockProduit::USAGE_COMMANDE_CARTE
-            : StockProduit::USAGE_APPRO;
+        return $this->usage;
     }
 
     protected function rules()
@@ -138,7 +145,7 @@ class FormEntree extends Component
             StockEntree::create($validated);
 
             session()->flash('success', 'Entrée de stock enregistrée avec succès. Le stock a été mis à jour.');
-            return redirect()->route('stock.entrees.index');
+            return redirect()->route('stock.entrees.index', ['usage' => $this->usage]);
         } catch (\Exception $e) {
             session()->flash('error', 'Erreur lors de l\'enregistrement : ' . $e->getMessage());
         }
@@ -146,7 +153,7 @@ class FormEntree extends Component
 
     public function cancel()
     {
-        return redirect()->route('stock.entrees.index');
+        return redirect()->route('stock.entrees.index', ['usage' => $this->usage]);
     }
 
     public function render()

@@ -4,6 +4,7 @@ namespace App\Livewire\Production;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Livewire\WithPagination;
 use Livewire\Attributes\Layout;
 use App\Models\CommandeClient;
 use App\Models\StockReservation;
@@ -15,10 +16,13 @@ use Illuminate\Support\Facades\Storage;
 #[Layout('components.layouts.app')]
 class OrdersManagement extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, WithPagination;
 
-    /** Recherche : n° commande, client, produit, statut */
+    /** Recherche : n° commande, client, produit */
     public string $search = '';
+
+    /** Filtre par statut */
+    public string $filterStatut = '';
 
     /** Modal Valider : modifier quantité puis valider */
     public bool $showModalValider = false;
@@ -30,11 +34,46 @@ class OrdersManagement extends Component
     public ?int $orderIdToLivrer = null;
     public $blSigneFile = null;
 
+    protected $queryString = ['search', 'filterStatut'];
+
     public function mount(): void
     {
         if (request()->filled('search')) {
             $this->search = (string) request('search');
         }
+        if (request()->filled('filterStatut')) {
+            $this->filterStatut = (string) request('filterStatut');
+        }
+    }
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterStatut(): void
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * Compteurs par statut pour les pills de filtre.
+     */
+    public function getStatsProperty(): array
+    {
+        $counts = CommandeClient::selectRaw('statut, count(*) as total')
+            ->groupBy('statut')
+            ->pluck('total', 'statut')
+            ->toArray();
+
+        return [
+            'all'                      => array_sum($counts),
+            'soumis'                   => $counts['soumis'] ?? 0,
+            'en_cours_de_traitement'   => $counts['en_cours_de_traitement'] ?? 0,
+            'finalise'                 => $counts['finalise'] ?? 0,
+            'livre'                    => $counts['livre'] ?? 0,
+            'rejetee'                  => $counts['rejetee'] ?? 0,
+        ];
     }
 
     public function openModalValider(int $orderId): void
@@ -216,17 +255,22 @@ class OrdersManagement extends Component
         $query = CommandeClient::with(['client.client', 'produit'])
             ->orderBy('created_at', 'desc');
 
+        // Filtre par statut
+        if ($this->filterStatut !== '') {
+            $query->where('statut', $this->filterStatut);
+        }
+
+        // Recherche textuelle
         if ($this->search !== '') {
             $s = trim($this->search);
             $query->where(function ($q) use ($s) {
                 $q->where('commande_numero', 'like', "%{$s}%")
-                    ->orWhere('statut', 'like', "%{$s}%")
                     ->orWhereHas('client', fn ($q2) => $q2->where('users', 'like', "%{$s}%"))
                     ->orWhereHas('produit', fn ($q2) => $q2->where('libelle', 'like', "%{$s}%"));
             });
         }
 
-        $orders = $query->get();
+        $orders = $query->paginate(15);
         $orderValider = $this->orderIdToValidate
             ? CommandeClient::with(['client', 'produit'])->find($this->orderIdToValidate)
             : null;

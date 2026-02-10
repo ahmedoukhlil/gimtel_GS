@@ -19,14 +19,24 @@ class ListeEntrees extends Component
     public $filterFournisseur = '';
     public $dateDebut = '';
     public $dateFin = '';
+    /** Type d'entrées : 'commande_carte' ou 'appro' */
+    public string $usage = '';
 
-    protected $queryString = ['search', 'filterProduit', 'filterFournisseur', 'dateDebut', 'dateFin'];
+    protected $queryString = ['search', 'filterProduit', 'filterFournisseur', 'dateDebut', 'dateFin', 'usage'];
 
     public function mount()
     {
         $user = auth()->user();
         if (!$user || !$user->canCreateEntree()) {
             abort(403, 'Accès non autorisé.');
+        }
+
+        // Si le paramètre usage est passé en query string, on l'utilise ;
+        // sinon, on détermine en fonction du rôle.
+        if (empty($this->usage) || !in_array($this->usage, [StockProduit::USAGE_COMMANDE_CARTE, StockProduit::USAGE_APPRO], true)) {
+            $this->usage = $user->isDirectionProduction()
+                ? StockProduit::USAGE_COMMANDE_CARTE
+                : StockProduit::USAGE_APPRO;
         }
 
         // Dates par défaut : dernier mois
@@ -43,13 +53,54 @@ class ListeEntrees extends Component
         $this->resetPage();
     }
 
+    public function updatingFilterProduit()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterFournisseur()
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * Statistiques résumées pour les cartes.
+     */
+    public function getStatsProperty(): array
+    {
+        $usage = $this->usage;
+
+        $baseQuery = StockEntree::query()
+            ->whereHas('produit', fn ($q) => $q->where('usage', $usage))
+            ->when($this->dateDebut, fn($q) => $q->where('date_entree', '>=', $this->dateDebut))
+            ->when($this->dateFin, fn($q) => $q->where('date_entree', '<=', $this->dateFin));
+
+        $totalQuantite = (clone $baseQuery)->sum('quantite');
+        $totalEntrees = (clone $baseQuery)->count();
+        $totalProduits = (clone $baseQuery)->distinct('produit_id')->count('produit_id');
+        $totalFournisseurs = (clone $baseQuery)->distinct('fournisseur_id')->count('fournisseur_id');
+
+        return [
+            'total_quantite' => $totalQuantite,
+            'total_entrees' => $totalEntrees,
+            'total_produits' => $totalProduits,
+            'total_fournisseurs' => $totalFournisseurs,
+        ];
+    }
+
+    public function resetFilters(): void
+    {
+        $this->search = '';
+        $this->filterProduit = '';
+        $this->filterFournisseur = '';
+        $this->dateDebut = now()->subMonth()->format('Y-m-d');
+        $this->dateFin = now()->format('Y-m-d');
+        $this->resetPage();
+    }
+
     public function render()
     {
-        $user = auth()->user();
-        // Direction Production : entrées commandes/cartes ; Admin / Admin stock : entrées appro
-        $usage = $user->isDirectionProduction()
-            ? StockProduit::USAGE_COMMANDE_CARTE
-            : StockProduit::USAGE_APPRO;
+        $usage = $this->usage;
 
         $entrees = StockEntree::query()
             ->whereHas('produit', fn ($q) => $q->where('usage', $usage))
@@ -81,17 +132,10 @@ class ListeEntrees extends Component
         $produits = StockProduit::where('usage', $usage)->orderBy('libelle')->get();
         $fournisseurs = StockFournisseur::where('usage', $usage === StockProduit::USAGE_COMMANDE_CARTE ? StockFournisseur::USAGE_COMMANDE_CARTE : StockFournisseur::USAGE_APPRO)->orderBy('libelle')->get();
 
-        $totalQuantite = StockEntree::query()
-            ->whereHas('produit', fn ($q) => $q->where('usage', $usage))
-            ->when($this->dateDebut, fn($q) => $q->where('date_entree', '>=', $this->dateDebut))
-            ->when($this->dateFin, fn($q) => $q->where('date_entree', '<=', $this->dateFin))
-            ->sum('quantite');
-
         return view('livewire.stock.entrees.liste-entrees', [
             'entrees' => $entrees,
             'produits' => $produits,
             'fournisseurs' => $fournisseurs,
-            'totalQuantite' => $totalQuantite,
             'usageEntrees' => $usage,
         ]);
     }

@@ -3,19 +3,28 @@
 namespace App\Livewire\Production;
 
 use Livewire\Component;
+use Livewire\WithPagination;
 use Livewire\Attributes\Layout;
 use App\Models\StockReservation;
 use App\Models\StockProduit;
 use App\Models\Client;
+
 #[Layout('components.layouts.app')]
 class GestionReservations extends Component
 {
+    use WithPagination;
+
+    public string $search = '';
+    public string $filterClient = '';
+
     public $showForm = false;
     public $editingId = null;
 
     public $client_id = '';
     public $produit_id = '';
     public $quantite_reservee = 0;
+
+    protected $queryString = ['search', 'filterClient'];
 
     protected function rules(): array
     {
@@ -41,6 +50,34 @@ class GestionReservations extends Component
         if (!$user || !$user->isDirectionProduction()) {
             abort(403, 'Accès réservé à la direction production.');
         }
+    }
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterClient(): void
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * Stats résumées pour les cartes en haut.
+     */
+    public function getStatsProperty(): array
+    {
+        $reservations = StockReservation::all();
+        $totalReserve = $reservations->sum('quantite_reservee');
+        $totalClients = $reservations->pluck('client_id')->unique()->count();
+        $totalProduits = $reservations->pluck('produit_id')->unique()->count();
+
+        return [
+            'total_reservations' => $reservations->count(),
+            'total_clients' => $totalClients,
+            'total_produits' => $totalProduits,
+            'total_reserve' => $totalReserve,
+        ];
     }
 
     public function openCreate(): void
@@ -71,6 +108,7 @@ class GestionReservations extends Component
         $this->client_id = '';
         $this->produit_id = '';
         $this->quantite_reservee = 0;
+        $this->resetValidation();
     }
 
     public function save(): void
@@ -117,10 +155,25 @@ class GestionReservations extends Component
 
     public function render()
     {
-        $reservations = StockReservation::with(['client', 'produit.categorie'])
+        $query = StockReservation::with(['client', 'produit.categorie'])
             ->orderBy('client_id')
-            ->orderBy('produit_id')
-            ->paginate(15);
+            ->orderBy('produit_id');
+
+        // Recherche
+        if ($this->search !== '') {
+            $term = '%' . trim($this->search) . '%';
+            $query->where(function ($q) use ($term) {
+                $q->whereHas('client', fn ($c) => $c->where('NomClient', 'like', $term))
+                  ->orWhereHas('produit', fn ($p) => $p->where('libelle', 'like', $term));
+            });
+        }
+
+        // Filtre par client
+        if ($this->filterClient !== '') {
+            $query->where('client_id', $this->filterClient);
+        }
+
+        $reservations = $query->paginate(15);
 
         $clients = Client::orderBy('NomClient')->get(['id', 'NomClient']);
         $produits = StockProduit::pourCommandeCarte()->with('categorie')->orderBy('libelle')->get();

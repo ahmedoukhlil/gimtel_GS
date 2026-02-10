@@ -3,6 +3,7 @@
 namespace App\Livewire\Dmg;
 
 use Livewire\Component;
+use Livewire\WithPagination;
 use Livewire\Attributes\Layout;
 use App\Models\DemandeApprovisionnement;
 use App\Models\Service;
@@ -10,10 +11,14 @@ use App\Models\Service;
 #[Layout('components.layouts.app')]
 class ListeDemandesDmg extends Component
 {
+    use WithPagination;
+
     public string $search = '';
-    public ?string $filterStatut = null;
+    public string $filterStatut = '';
     public ?int $filterServiceId = null;
     public ?int $filterDemandeurId = null;
+
+    protected $queryString = ['search', 'filterStatut', 'filterDemandeurId'];
 
     public function mount(): void
     {
@@ -31,6 +36,38 @@ class ListeDemandesDmg extends Component
         }
     }
 
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterStatut(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterDemandeurId(): void
+    {
+        $this->resetPage();
+    }
+
+    public function getStatsProperty(): array
+    {
+        $counts = DemandeApprovisionnement::selectRaw('statut, count(*) as total')
+            ->groupBy('statut')
+            ->pluck('total', 'statut')
+            ->toArray();
+
+        return [
+            'all'      => array_sum($counts),
+            'soumis'   => $counts['soumis'] ?? 0,
+            'en_cours' => $counts['en_cours'] ?? 0,
+            'approuve' => $counts['approuve'] ?? 0,
+            'rejete'   => $counts['rejete'] ?? 0,
+            'servi'    => $counts['servi'] ?? 0,
+        ];
+    }
+
     public function render()
     {
         $query = DemandeApprovisionnement::query()
@@ -38,7 +75,7 @@ class ListeDemandesDmg extends Component
             ->orderByRaw("CASE WHEN statut IN ('soumis', 'en_cours') THEN 0 ELSE 1 END")
             ->orderBy('created_at', 'desc');
 
-        if ($this->filterStatut !== null) {
+        if ($this->filterStatut !== '') {
             $query->where('statut', $this->filterStatut);
         }
         if ($this->filterServiceId !== null) {
@@ -56,16 +93,12 @@ class ListeDemandesDmg extends Component
             });
         }
 
-        $demandes = $query->get();
-        $services = Service::where('actif', true)->orderBy('nom')->get();
+        $demandes = $query->paginate(15);
         $demandeurs = \App\Models\StockDemandeur::orderBy('nom')->get();
-        $enAttente = DemandeApprovisionnement::whereIn('statut', ['soumis', 'en_cours'])->count();
 
         return view('livewire.dmg.liste-demandes-dmg', [
             'demandes' => $demandes,
-            'services' => $services,
             'demandeurs' => $demandeurs,
-            'enAttente' => $enAttente,
         ]);
     }
 }
